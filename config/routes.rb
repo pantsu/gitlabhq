@@ -19,7 +19,9 @@ Gitlab::Application.routes.draw do
 
   resources :projects, :only => [:new, :create, :index]
   resources :keys
-  devise_for :users
+  devise_for :users, :controllers => { :omniauth_callbacks => "omniauth_callbacks" } do
+    get '/auth/:provider' => 'omniauth_callbacks#passthru'
+  end
 
   resources :projects, :except => [:new, :create, :index], :path => "/" do 
     member do 

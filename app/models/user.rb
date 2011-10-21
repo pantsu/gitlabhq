@@ -1,8 +1,9 @@
 class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
-  # :token_authenticatable, :encryptable, :confirmable, :lockable, :timeoutable and :omniauthable
-  devise :database_authenticatable,
-         :recoverable, :rememberable, :trackable, :validatable
+  # :token_authenticatable, :encryptable, :lockable, :timeoutable,
+  # :database_authenticatable, :registerable,
+  # :validatable and :confirmable
+  devise :omniauthable, :rememberable, :trackable, :database_authenticatable, :recoverable
 
   # Setup accessible (or protected) attributes for your model
   attr_accessible :email, :password, :password_confirmation, :remember_me, 
@@ -24,6 +25,15 @@ class User < ActiveRecord::Base
 
   scope :not_in_project, lambda { |project|  where("id not in (:ids)", :ids => project.users.map(&:id) ) }
 
+  before_validation :generate_password, :on => :create
+
+  scope :online, lambda { where("updated_at > ?", 15.seconds.ago) }
+
+  def generate_password
+    o =  [('a'..'z'), ('A'..'Z'), (0..9)].map{|i| i.to_a}.flatten
+    self.password = self.password_confirmation = (0..16).map{ o[rand(o.length)] }.join if self.password.blank?
+  end
+
   def identifier
     email.gsub "@", "_"
   end
@@ -39,6 +49,28 @@ class User < ActiveRecord::Base
   def last_activity_project
     projects.first
   end
+
+  def self.find_for_ldap_auth(omniauth)
+    # ACCOUNTDISABLE = 2
+    # LOCKOUT = 16
+    # PASSWORD_EXPIRED = 8388608
+    if (omniauth["extra"][:useraccountcontrol][0].to_i & (2 | 16 | 8388608) == 0)
+      authentication = Authentication.find_by_provider_and_uuid(omniauth['provider'], omniauth["extra"][:dn].to_a.first.to_s)
+      if authentication && authentication.user
+        authentication.user.update_attribute(:name, omniauth["extra"][:displayname][0])
+        authentication.user
+      else
+        user = User.find_or_create_by_email(omniauth["extra"][:mail][0])
+        user.update_attribute(:name, omniauth["extra"][:displayname][0])
+        user.authentications.build(:provider => omniauth['provider'], :uuid => omniauth["extra"][:dn].to_a.first.to_s)
+        user.save
+        user
+      end
+    else
+      User.new
+    end
+  end
+
 end
 # == Schema Information
 #
