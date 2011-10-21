@@ -12,6 +12,7 @@ class User < ActiveRecord::Base
   has_many :projects, :through => :users_projects
   has_many :my_own_projects, :class_name => "Project", :foreign_key => :owner_id
   has_many :keys, :dependent => :destroy
+  has_many :authentications, :dependent => :destroy
   has_many :issues,
     :foreign_key => :author_id,
     :dependent => :destroy
