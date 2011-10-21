@@ -3,7 +3,9 @@ source 'http://rubygems.org'
 gem 'rails', '3.1.0'
 
 gem 'sqlite3'
+gem 'pg'
 gem 'devise', "1.4.7"
+gem 'oa-enterprise', :git => 'git://github.com/pantsu/omniauth.git', :branch => '0-3-stable', :require => 'omniauth/enterprise'
 gem 'stamp'
 gem 'will_paginate', '~> 3.0'
 gem 'haml-rails'
@@ -17,7 +19,7 @@ gem 'seed-fu', :git => 'git://github.com/mbleigh/seed-fu.git'
 gem "inifile"
 gem "pygments.rb", "0.2.3"
 gem "kaminari"
-gem "thin"
+gem "unicorn"
 gem "git"
 gem "acts_as_list"
 
